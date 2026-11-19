@@ -121,7 +121,12 @@ $$('.pr').forEach(r=>{
 /* ---- populate horizontal project gallery (#pgal) ---- */
 const pgal=$('#pgal');
 if(pgal){
- pgal.innerHTML=P.map((p,i)=>`<article class="pgc" data-i="${i}" data-cur="CASE"><div class="pgc-top"><div class="pgc-art">${IMG[i]}</div><div class="pgc-head" style="margin-top:16px"><span class="mono">0${i+1} · ${p.k}</span><span class="mono">${p.b}</span></div><h3 class="D">${p.t}</h3><p>${p.l[0]}</p></div><div><div class="pgc-chips">${ch(p.s)}</div><div class="pgc-foot"><button type="button" class="pgc-btn" data-open="${i}" data-cur="OPEN">Inspect Case Study &amp; Screens →</button>${p.g?`<a class="mono" style="color:var(--m)" data-cur="CODE" href="${p.g}" target="_blank" rel="noopener">GitHub ↗</a>`:''}</div></div></article>`).join('');
+ pgal.innerHTML=P.map((p,i)=>{
+  const x=PX[i];
+  const shots=x?(x.gr?x.gr[0].im.slice(0,3):(x.im?x.im.slice(0,3):[])):[];
+  const shotsHtml=shots.length?`<div class="pgc-shots">${shots.map((m,j)=>`<div class="pgc-shot"><img src="${m.s}" alt="${p.t} screen ${j+1}" loading="lazy"></div>`).join('')}</div>`:`<div class="pgc-art">${IMG[i]}</div>`;
+  return `<article class="pgc" data-i="${i}" data-cur="CASE"><div class="pgc-top">${shotsHtml}<div class="pgc-head" style="margin-top:16px"><span class="mono">0${i+1} · ${p.k}</span><span class="mono">${p.b}</span></div><h3 class="D">${p.t}</h3><p>${p.l[0]}</p></div><div><div class="pgc-chips">${ch(p.s)}</div><div class="pgc-foot"><button type="button" class="pgc-btn" data-open="${i}" data-cur="OPEN">Inspect Case Study &amp; Screens →</button>${p.g?`<a class="mono" style="color:var(--m)" data-cur="CODE" href="${p.g}" target="_blank" rel="noopener">GitHub ↗</a>`:''}</div></div></article>`;
+ }).join('');
 }
 
 /* ---- helpers ---- */
@@ -291,10 +296,18 @@ const projTx=(idx,x,y,done)=>{
   .to(ws,{yPercent:-120,duration:.4,stagger:.04,ease:'power3.in'},'+=.28')
   .to(ptx,{clipPath:`circle(0% at ${ox}% ${oy}%)`,duration:.55,ease:'power3.inOut'},'-=.15');
 };
-$$('.pr').forEach((r,i)=>$('.ph',r).onclick=e=>{
- const o=!r.classList.contains('open');
- const apply=()=>{$$('.pr.open').forEach(x=>x!==r&&setP(x,false));setP(r,o)};
- if(o)projTx(i,e.clientX,e.clientY,apply);else apply();
+$$('.pr').forEach((r,i)=>{
+ $('.ph',r).onclick=()=>{
+  const o=!r.classList.contains('open');
+  $$('.pr.open').forEach(x=>x!==r&&setP(x,false));
+  setP(r,o);
+  if(o&&!RM){
+   setTimeout(()=>{
+    if(L)L.scrollTo(r,{offset:-90,duration:0.8,onComplete:rfs});
+    else r.scrollIntoView({behavior:'smooth',block:'start'});
+   },100);
+  }
+ };
 });
 
 let curView='l';
@@ -336,13 +349,16 @@ const sv=v=>{
  }
 };
 $$('.vt button').forEach(b=>b.onclick=()=>sv(b.dataset.v));
-const openProj=(i,x,y)=>projTx(i,x,y,()=>{
+const openProj=i=>{
  sv('l');
  const row=$$('.pr')[i];if(!row)return;
  $$('.pr.open').forEach(r=>r!==row&&setP(r,false));
  setP(row,true);
- requestAnimationFrame(()=>{L?L.scrollTo(row,{immediate:true,offset:-90}):row.scrollIntoView({block:'start'})});
-});
+ setTimeout(()=>{
+  if(L)L.scrollTo(row,{offset:-90,duration:0.8,onComplete:rfs});
+  else row.scrollIntoView({behavior:'smooth',block:'start'});
+ },120);
+};
 $$('.oc').forEach(c=>{
  c.addEventListener('click',e=>{if(c.dataset.moved)return;openProj(+c.dataset.i,e.clientX,e.clientY)});
  c.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openProj(+c.dataset.i)}});
@@ -492,7 +508,7 @@ const motes=Array.from({length:MOTES},(_,i)=>({
  vy:(Math.random()-.5)*.48,
  r:1.1+Math.random()*1.6,
  a:.18+Math.random()*.28,
- c:i%3===0?'240,166,192':'139,140,248'
+ c:i%3===0?'96,165,250':'59,130,246'
 }));
 addTick(()=>{
  ctx.clearRect(0,0,cv.width,cv.height);
@@ -508,20 +524,20 @@ addTick(()=>{
   for(let j=i+1;j<motes.length;j++){
    const n=motes[j],dx=m.x-n.x,dy=m.y-n.y,d2=dx*dx+dy*dy;
    if(d2<16000){
-    ctx.strokeStyle=`rgba(139,140,248,${(1-d2/16000)*.11})`;
+    ctx.strokeStyle=`rgba(59,130,246,${(1-d2/16000)*.12})`;
     ctx.lineWidth=1;
     ctx.beginPath();ctx.moveTo(m.x,m.y);ctx.lineTo(n.x,n.y);ctx.stroke();
    }
   }
   const cdx=m.x-tCurX,cdy=m.y-tCurY,cd2=cdx*cdx+cdy*cdy;
   if(cd2<24000){
-   ctx.strokeStyle=`rgba(139,140,248,${(1-cd2/24000)*.22})`;
+   ctx.strokeStyle=`rgba(59,130,246,${(1-cd2/24000)*.2})`;
    ctx.lineWidth=1;
    ctx.beginPath();ctx.moveTo(m.x,m.y);ctx.lineTo(tCurX,tCurY);ctx.stroke();
   }
  }
  pts=pts.filter(p=>(p.l-=.045)>0);
- pts.forEach(p=>{ctx.fillStyle=`rgba(139,140,248,${p.l*.32})`;ctx.beginPath();ctx.arc(p.x,p.y,p.l*12,0,7);ctx.fill()});
+ pts.forEach(p=>{ctx.fillStyle=`rgba(96,165,250,${p.l*.28})`;ctx.beginPath();ctx.arc(p.x,p.y,p.l*12,0,7);ctx.fill()});
 });
 
 /* ---- 3D card tilt + magnetic buttons + dual custom cursor + project hover preview ---- */
